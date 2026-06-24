@@ -29,12 +29,13 @@ df_clean.groupBy().avg("age").show()
 
 # COMMAND ----------
 # MAGIC %md
-# MAGIC ## Guardar resultados (ejemplo Databricks)
+# MAGIC ## Guardar resultados (opcional)
+# MAGIC
+# MAGIC En este entorno puede que el acceso a `dbfs:/FileStore/...` esté deshabilitado.
+# MAGIC Si tu workspace permite escritura, reemplaza esta sección por una ruta válida en un volumen montado o en un almacenamiento configurado.
 
 # COMMAND ----------
-output_path = "dbfs:/FileStore/notebook_result_parquet"
-df_clean.write.mode("overwrite").parquet(output_path)
-print(f"Resultados guardados en: {output_path}")
+print("El DataFrame limpio ya se ha generado y mostrado. Omite la escritura si DBFS está deshabilitado.")
 
 # COMMAND ----------
 spark.stop()
