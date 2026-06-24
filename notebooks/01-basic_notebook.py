@@ -29,10 +29,10 @@ df_clean.groupBy().avg("age").show()
 
 # COMMAND ----------
 # MAGIC %md
-# MAGIC ## Guardar resultados (ejemplo local)
+# MAGIC ## Guardar resultados (ejemplo Databricks)
 
 # COMMAND ----------
-output_path = "/tmp/notebook_result_parquet"
+output_path = "dbfs:/FileStore/notebook_result_parquet"
 df_clean.write.mode("overwrite").parquet(output_path)
 print(f"Resultados guardados en: {output_path}")
 
