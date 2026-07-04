@@ -121,32 +121,27 @@ resumen_region.show()
 
 # COMMAND ----------
 # MAGIC %md
-# MAGIC ## 6. Guardado en formato Delta (con manejo de entornos sin DBFS)
+# MAGIC ## 6. Guardado en formato Delta como tabla administrada (Managed Table)
 # MAGIC
 # MAGIC Delta Lake es lo que da a Databricks transacciones ACID y "time travel".
-# MAGIC Si el entorno no permite escribir en DBFS o en una ruta montada, el
-# MAGIC notebook lo detecta y continúa sin fallar.
+# MAGIC En vez de escribir a una ruta fija de DBFS (que en muchos workspaces,
+# MAGIC incluida la Community Edition, tiene el acceso público bloqueado por
+# MAGIC seguridad), se usa `saveAsTable`, que deja que el propio Databricks
+# MAGIC administre dónde y cómo se guardan los archivos. Así la tabla queda
+# MAGIC registrada de forma permanente en el Catalog, sin depender del DBFS
+# MAGIC público ni de una ruta manual.
 
 # COMMAND ----------
-ruta_delta = "/tmp/ventas_delta"
-
 try:
     (
         df_ventana.write
         .format("delta")
         .mode("overwrite")
-        .save(ruta_delta)
+        .saveAsTable("ventas_delta")
     )
-    print(f"Datos guardados en formato Delta en: {ruta_delta}")
-
-    # Registrar como tabla para poder consultarla con SQL
-    spark.sql(f"""
-        CREATE TABLE IF NOT EXISTS ventas_delta
-        USING DELTA
-        LOCATION '{ruta_delta}'
-    """)
+    print("Tabla 'ventas_delta' guardada como tabla administrada en el Catalog.")
 except Exception as e:
-    print("No fue posible escribir en Delta en este entorno.")
+    print("No fue posible guardar la tabla administrada en este entorno.")
     print(f"Detalle: {e}")
     df_ventana.createOrReplaceTempView("ventas_delta")
     print("Se registró una vista temporal 'ventas_delta' para continuar con las consultas SQL.")
@@ -168,15 +163,20 @@ spark.sql("""
 
 # COMMAND ----------
 # MAGIC %md
-# MAGIC ## 8. "Time travel" (solo aplica si se escribió en Delta real)
+# MAGIC ## 8. "Time travel" (solo aplica si se guardó como tabla Delta real)
 # MAGIC
 # MAGIC Delta Lake guarda versiones de la tabla en cada escritura, permitiendo
 # MAGIC consultar el estado de los datos en un punto anterior en el tiempo.
+# MAGIC Como ahora la tabla se guarda con `saveAsTable`, se puede consultar
+# MAGIC directamente por nombre en vez de por ruta.
 # MAGIC
 # MAGIC ```python
 # MAGIC # Ejemplo (requiere al menos 2 versiones de la tabla):
-# MAGIC df_version_0 = spark.read.format("delta").option("versionAsOf", 0).load(ruta_delta)
+# MAGIC df_version_0 = spark.read.format("delta").option("versionAsOf", 0).table("ventas_delta")
 # MAGIC df_version_0.show()
+# MAGIC
+# MAGIC # También se puede revisar el historial de versiones:
+# MAGIC spark.sql("DESCRIBE HISTORY ventas_delta").show()
 # MAGIC ```
 
 # COMMAND ----------
